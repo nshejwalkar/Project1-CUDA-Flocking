@@ -562,3 +562,7 @@ xcuserdata
 *.xccheckout
 *.moved-aside
 *.xcuserstate
+
+# Machine-local CMake presets
+CMakePresets.json
+CMakeUserPresets.json
