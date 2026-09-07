@@ -200,7 +200,7 @@ void initShaders(GLuint * program) {
     float *dptrVertPositions = NULL;
     float *dptrVertVelocities = NULL;
 
-    // *dptrVertPositions and the array that boidVBO_positions refers to are the same physical address. this gives cuda ownership of that memory
+    // *dptrVertPositions and the array that boidVBO_positions refers to are the same physical address. this also gives cuda ownership of that memory
     cudaGLMapBufferObject((void**)&dptrVertPositions, boidVBO_positions);
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
