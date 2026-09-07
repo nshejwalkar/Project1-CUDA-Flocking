@@ -156,7 +156,6 @@ void initVAO() {
   // Bind the positions array to the boidVAO by way of the boidVBO_positions
   glBindBuffer(GL_ARRAY_BUFFER, boidVBO_positions); // bind the buffer
   glBufferData(GL_ARRAY_BUFFER, 4 * (N_FOR_VIS) * sizeof(GLfloat), bodies.get(), GL_DYNAMIC_DRAW); // transfer data
-
   glEnableVertexAttribArray(positionLocation);
   glVertexAttribPointer((GLuint)positionLocation, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -201,10 +200,11 @@ void initShaders(GLuint * program) {
     float *dptrVertPositions = NULL;
     float *dptrVertVelocities = NULL;
 
+    // *dptrVertPositions and the array that boidVBO_positions refers to are the same physical address. this gives cuda ownership of that memory
     cudaGLMapBufferObject((void**)&dptrVertPositions, boidVBO_positions);
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
-    // execute the kernel
+    // execute the kernel (purely computational, to update the positions/velocities)
     #if UNIFORM_GRID && COHERENT_GRID
     Boids::stepSimulationCoherentGrid(DT);
     #elif UNIFORM_GRID
@@ -213,10 +213,12 @@ void initShaders(GLuint * program) {
     Boids::stepSimulationNaive(DT);
     #endif
 
+    // this launches kernels to copy position/velocity data from the gpu's cudaMalloced arrays into the two vbos we just bound above
+    // notice we can (and must) pass in the pointers we created because it maps to the same physical address as the vbos.
     #if VISUALIZE
     Boids::copyBoidsToVBO(dptrVertPositions, dptrVertVelocities);
     #endif
-    // unmap buffer object
+    // unmap buffer object (getting rid of the cuda device pointer) so that the OpenGL driver can own it to actually draw
     cudaGLUnmapBufferObject(boidVBO_positions);
     cudaGLUnmapBufferObject(boidVBO_velocities);
   }
