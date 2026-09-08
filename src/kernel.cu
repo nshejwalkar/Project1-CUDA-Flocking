@@ -47,7 +47,12 @@ void checkCUDAError(const char *msg, int line = -1) {
 *****************/
 
 /*! Block size used for CUDA kernel launch. */
-#define blockSize 128
+// Benchmark harness: block size is runtime-settable via Boids::setBlockSize().
+// Only ever read in host-side launch configuration, never inside device code,
+// so making it a variable does not alter kernel codegen.
+static int blockSize = 128;
+void Boids::setBlockSize(int b) { blockSize = b; }
+int  Boids::getBlockSize() { return blockSize; }
 
 // LOOK-1.2 Parameters for the boids algorithm.
 // These worked well in our reference implementation.
@@ -448,6 +453,8 @@ __global__ void kernUpdateVelNeighborSearchScattered(
 
   // - Identify the grid cell that this particle is in
   // - Identify which cells may contain neighbors. This isn't always 8.
+
+  // we can do this geometrically by figuring out the max and min x,y,z to check (forming a cube around the boid)...
   float max_dist = fmaxf(fmaxf(rule1Distance, rule2Distance), rule3Distance);
   glm::vec3 lo = (self_pos - gridMin - max_dist) * inverseCellWidth;
   glm::vec3 hi = (self_pos - gridMin + max_dist) * inverseCellWidth;
@@ -465,6 +472,8 @@ __global__ void kernUpdateVelNeighborSearchScattered(
   int num_neighbors3{};
   glm::vec3 perceived_velocity(0.0f, 0.0f, 0.0f);
 
+  // then, we can just traverse through each integer point on the cube, map it to a grid cell, which gives a range of indices of boids in dev_particleArrayIndices
+  // for each boid index in that cell, jump from dev_particleArrayIndices -> dev_pos/vel to get that boids' data.
   for (int z = z_lo; z <= z_hi; z++) {
     for (int y = y_lo; y <= y_hi; y++) {
       for (int x = x_lo; x <= x_hi; x++) {
@@ -546,6 +555,7 @@ __global__ void kernUpdateVelNeighborSearchCoherent(
 
   // - Identify the grid cell that this particle is in
   // - Identify which cells may contain neighbors. This isn't always 8.
+  // same geometric thing as before
   float max_dist = fmaxf(fmaxf(rule1Distance, rule2Distance), rule3Distance);
   glm::vec3 lo = (self_pos - gridMin - max_dist) * inverseCellWidth;
   glm::vec3 hi = (self_pos - gridMin + max_dist) * inverseCellWidth;
