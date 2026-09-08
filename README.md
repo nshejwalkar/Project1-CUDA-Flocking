@@ -3,7 +3,7 @@ Project 1 - Flocking**
 
 * Neel Shejwalkar
   * [LinkedIn](https://www.linkedin.com/in/neel-shejwalkar/), [twitter](https://x.com/neelshej)
-* Tested on: Ubuntu 24.04.4 LTS, AMD Ryzen 9 9950X @ 5.76GHz 64GB, RTX 5080 16GB (Personal Computer)
+* Tested on: Windows 11, i7-10510U @ 1.80GHz 16GB, MX250 2GB (Personal Computer)
 
 ### README
 

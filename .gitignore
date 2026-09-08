@@ -566,3 +566,6 @@ xcuserdata
 # Machine-local CMake presets
 CMakePresets.json
 CMakeUserPresets.json
+
+# VS Code workspace config (machine-local)
+.vscode/
