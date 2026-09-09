@@ -45,14 +45,12 @@ void checkCUDAError(const char *msg, int line = -1) {
 /*****************
 * Configuration *
 *****************/
+#define blockSize 128
 
-/*! Block size used for CUDA kernel launch. */
-// Benchmark harness: block size is runtime-settable via Boids::setBlockSize().
-// Only ever read in host-side launch configuration, never inside device code,
-// so making it a variable does not alter kernel codegen.
-static int blockSize = 128;
-void Boids::setBlockSize(int b) { blockSize = b; }
-int  Boids::getBlockSize() { return blockSize; }
+// Grid cell width relative to the search diameter, set from main.cpp before initSimulation() 
+// 2.0 => cell diameter = search diameter (8 cells searched).
+static float cellWidthMul = 2.0f;
+void Boids::setCellWidthMultiplier(float m) { cellWidthMul = m; }
 
 // LOOK-1.2 Parameters for the boids algorithm.
 // These worked well in our reference implementation.
@@ -181,7 +179,7 @@ void Boids::initSimulation(int N) {
   checkCUDAErrorWithLine("kernGenerateRandomPosArray failed!");
 
   // LOOK-2.1 computing grid params
-  gridCellWidth = 2.0f * std::max(std::max(rule1Distance, rule2Distance), rule3Distance);  // equal to diam of largest distance
+  gridCellWidth = cellWidthMul * std::max(std::max(rule1Distance, rule2Distance), rule3Distance);  // dynamically adjust cell width
   int halfSideCount = (int)(scene_scale / gridCellWidth) + 1;  
   gridSideCount = 2 * halfSideCount;  // scene_scale is half the grid size
 
@@ -412,7 +410,7 @@ __global__ void kernComputeIndices(int N, int gridResolution,
 __global__ void kernResetIntBuffer(int N, int *intBuffer, int value) {
   int index = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (index < N) {
-    intBuffer[index] = value;
+    intBuffer[index] = value;  // we'll use this to default gridCellStartIndices and gridCellEndIndices to -1 (nothing in that cell)
   }
 }
 
@@ -547,7 +545,7 @@ __global__ void kernUpdateVelNeighborSearchCoherent(
   // TODO-2.3 - This should be very similar to kernUpdateVelNeighborSearchScattered,
   // except with one less level of indirection.
   // This should expect gridCellStartIndices and gridCellEndIndices to refer
-  // directly to pos and vel1.
+  // directly to pos and vel1. - which are now sorted.
   int idx = threadIdx.x + blockDim.x * blockIdx.x;
   if (idx >= N) return;
 

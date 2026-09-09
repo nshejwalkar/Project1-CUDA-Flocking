@@ -1,8 +1,7 @@
 #pragma once
 
 namespace Boids {
-    void setBlockSize(int b);
-    int  getBlockSize();
+    void setCellWidthMultiplier(float m);
     void initSimulation(int N);
     void stepSimulationNaive(float dt);
     void stepSimulationScatteredGrid(float dt);
