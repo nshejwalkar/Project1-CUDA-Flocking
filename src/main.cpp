@@ -1,4 +1,4 @@
-/**
+﻿/**
 * @file      main.cpp
 * @brief     Example Boids flocking simulation for CIS 5650
 * @authors   Liam Boone, Kai Ninomiya, Kangning (Gary) Li
@@ -29,6 +29,13 @@
 // LOOK-1.2 - change this to adjust particle count in the simulation
 const int N_FOR_VIS = 5000;
 const float DT = 0.2f;
+
+// Grid cell width as a multiple of the largest neighbourhood distance.
+// 2.0f searches up to 8 cells, 1.0f searches up to 27 (Q4)
+#define CELL_WIDTH_MULTIPLIER 2.0f
+
+// per-frame CUDA vs OpenGL time (Q3)
+#define TIME_BREAKDOWN 0
 
 /**
 * C main function.
@@ -98,6 +105,7 @@ bool init(int argc, char **argv) {
     return false;
   }
   glfwMakeContextCurrent(window);
+  glfwSwapInterval(0);   // uncap the framerate (disable V-Sync)
   glfwSetKeyCallback(window, keyCallback);
   glfwSetCursorPosCallback(window, mousePositionCallback);
   glfwSetMouseButtonCallback(window, mouseButtonCallback);
@@ -118,6 +126,7 @@ bool init(int argc, char **argv) {
   cudaGLRegisterBufferObject(boidVBO_velocities);
 
   // Initialize N-body simulation
+  Boids::setCellWidthMultiplier(CELL_WIDTH_MULTIPLIER);
   Boids::initSimulation(N_FOR_VIS);
 
   updateCamera();
@@ -227,6 +236,9 @@ void initShaders(GLuint * program) {
     double fps = 0;
     double timebase = 0;
     int frame = 0;
+    #if TIME_BREAKDOWN
+    double cudaAcc = 0.0, glAcc = 0.0, cudaMs = 0.0, glMs = 0.0;
+    #endif
 
     Boids::unitTest(); // LOOK-1.2 We run some basic example code to make sure
                        // your CUDA development setup is ready to go.
@@ -239,17 +251,34 @@ void initShaders(GLuint * program) {
 
       if (time - timebase > 1.0) {
         fps = frame / (time - timebase);
+        #if TIME_BREAKDOWN
+        cudaMs = 1000.0 * cudaAcc / frame;
+        glMs = 1000.0 * glAcc / frame;
+        cudaAcc = glAcc = 0.0;
+        #endif
         timebase = time;
         frame = 0;
       }
 
+      #if TIME_BREAKDOWN
+      double tCuda = glfwGetTime();
+      #endif
       runCUDA();
+      #if TIME_BREAKDOWN
+      cudaDeviceSynchronize();  // this is required for the cuda ops to finish
+      double tDraw = glfwGetTime();
+      cudaAcc += tDraw - tCuda;
+      #endif
 
       std::ostringstream ss;
       ss << "[";
       ss.precision(1);
       ss << std::fixed << fps;
       ss << " fps] " << deviceName;
+      #if TIME_BREAKDOWN
+      ss.precision(2);
+      ss << "  [CUDA " << cudaMs << " ms | GL " << glMs << " ms]";
+      #endif
       glfwSetWindowTitle(window, ss.str().c_str());
 
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -264,6 +293,10 @@ void initShaders(GLuint * program) {
       glUseProgram(0);
       glBindVertexArray(0);
 
+      #if TIME_BREAKDOWN
+      glFinish();
+      glAcc += glfwGetTime() - tDraw;
+      #endif
       glfwSwapBuffers(window);
       #endif
     }
