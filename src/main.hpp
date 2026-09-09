@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "glslUtility.hpp"
 #include "utilityCore.hpp"
@@ -28,7 +28,7 @@ const float zFar = 10.0f;
 // LOOK-1.2: for high DPI displays, you may want to double these settings.
 int width = 1280;
 int height = 720;
-int pointSize = 2;
+int pointSize = 4;
 
 // For camera controls
 bool leftMousePressed = false;
@@ -37,7 +37,7 @@ double lastX;
 double lastY;
 float theta = 1.22f;
 float phi = -0.70f;
-float zoom = 4.0f;
+float zoom = 2.8f;
 glm::vec3 lookAt = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraPosition;
 
