@@ -73,14 +73,14 @@ Now with the visualization on, timing runCUDA() and the OpenGL operations (glDra
 
 There was no consistent effect here. They both resulted in very similar results except for an outlier at 50k boids. When searching 8 cells across a cell width of 2r (where r is the maximum of the radius of the three rules' distances), the volume searched is 8(2r)^3 = 64r^3, whereas searching 27 cells across a cell width of r results in 27r^3 volume searched. The 27 cells configuration searches fewer boids but has to make more grid accesses, and it seems as if the two cancel out on my GPU.
 
-## Benchmark Methodology:
+# Benchmark Methodology:
 For the main test, for each of (with, without visualization), for each of (naive, scattered grid, coherent grid), I tested on a large range of boid numbers: 1k, 5k, 10k, 25k, 50k, 100k, 250k, 500k, 1M boids.
 
 For each test, I set up a 3 second warmup period then measured the fps across the 5 seconds after the program began running.
 
 Considering I was working on a budget laptop, benchmarking was a lot more complicated than I initially imagined. I had done most of my development on my friend's desktop workstation at first, which has a Blackwell with a ton of cooling, and imagined profiling would be a simple loop over the program.
 
-For my GPU, thermal throttling begins at around 75 C. The laptop quickly shoots up to this temperature, then tweaks clock speeds to keep it here. in the case where the gpu still exceeds this temp, if it hits 97 C, thermal throttling occurs and aggressive clock cutting happens. Along with disabling V-Sync, I also positioned my laptop right next to the AC, had it plugged in, with all processes closed except for the ones I needed to run the program. This turned out to be extremely important. My initial benchmarks were on a hot laptop,sitting on my lap, with Chrome, VSCode and several other applications open, resulting in far lower clock speeds and worse performance by several orders of magnitude.
+For my GPU, thermal throttling begins at around 75 C. The laptop quickly shoots up to this temperature, then tweaks clock speeds to keep it here. In the case where the GPU still exceeds this temp, if it hits 97 C, thermal throttling occurs and aggressive clock cutting happens. Along with disabling V-Sync, I also positioned my laptop right next to the AC, had it plugged in, with all processes closed except for the ones I needed to run the program. This turned out to be extremely important. My initial benchmarks were on a hot laptop, sitting on my lap, with Chrome, VSCode and several other applications open, resulting in far lower clock speeds and worse performance by several orders of magnitude.
 
 
 ![GPU thermal and clock behaviour across the session](images/thermals.png)
@@ -90,7 +90,7 @@ We can observe that the temperature and the clock speeds are roughly stable thro
 To make it a bit more robust, I noted that the main goal was to compare different implementations at the same boid numbers, and then secondly to observe how the implementations themselves scaled with boid numbers. So some thermal drift across the second objective was fine, in service of the first objective. to make this work, I made sure all three implementations for a given boid size ran back to back to capture similar thermals, rather than, for example, having all of the naive runs go first, then scattered grid, etc. Although, given the stability of the clock speeds after implementing the fixes, this might not have made much of a difference.
 
 
-Problems:
+### Problems:
 - Blue Screen of Death
   - Solution: upgraded driver from 576.57 -> 581.80
 
